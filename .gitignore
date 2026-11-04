@@ -1,0 +1,7 @@
+build/
+libs/
+*.apk
+*.apk.idsig
+*.keystore
+*.dex
+obj/

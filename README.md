@@ -29,16 +29,18 @@ javac -source 17 -target 17 -encoding UTF-8 -d build/obj \
   stubs/de/robv/android/xposed/*.java stubs/de/robv/android/xposed/callbacks/*.java
 jar cf build/stubs.jar -C build/obj de
 
-# 编译模块源码（<android.jar> 换成你 SDK 里的路径）
-javac -source 17 -target 17 -encoding UTF-8 \
-  -classpath 'build/stubs.jar;<android.jar>' \
-  -d build/obj src/io/github/lteyo/privacyhook/*.java
-
-# dex、打包资源、塞 dex、对齐、签名
-d8 --release --min-api 31 --lib <android.jar> --output build/dex build/obj/io/github/lteyo/privacyhook/*.class
+# 编译资源并生成 R.java（<android.jar> 换成你 SDK 里的路径）
 aapt2 compile --dir res -o build/res.zip
-aapt2 link -o build/base.apk -I <android.jar> --manifest AndroidManifest.xml -A assets build/res.zip
-# 把 build/dex/classes.dex 加进 base.apk，然后 zipalign、apksigner sign
+aapt2 link -o build/base.apk -I <android.jar> --manifest AndroidManifest.xml -A assets \
+  build/res.zip --java build/gen --auto-add-overlay
+
+# 编译模块源码（含生成的 R.java）
+javac -source 17 -target 17 -encoding UTF-8 \
+  -classpath 'build/stubs.jar;<android.jar>;build/gen' \
+  -d build/obj src/io/github/lteyo/privacyhook/*.java build/gen/io/github/lteyo/privacyhook/R.java
+
+# dex，然后塞进 base.apk，zipalign、apksigner sign
+d8 --release --min-api 31 --lib <android.jar> --output build/dex build/obj/io/github/lteyo/privacyhook/*.class
 ```
 
 不想编译的话，[Release](https://github.com/Nanawwa/privacy-hook/releases) 里有构建好的 APK。
